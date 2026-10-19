@@ -23,14 +23,14 @@ class DebugActivity:Activity() {
     private val root:File get()=File(filesDir,"runs")
     override fun onCreate(savedInstanceState:Bundle?) {
         super.onCreate(savedInstanceState)
-        body=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setPadding(24,24,24,24) }
-        val scroll=ScrollView(this).apply { addView(body) }
+        body=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setPadding(WarmStyle.dp(this@DebugActivity,20),WarmStyle.dp(this@DebugActivity,16),WarmStyle.dp(this@DebugActivity,20),WarmStyle.dp(this@DebugActivity,16));setBackgroundColor(WarmStyle.background) }
+        val scroll=ScrollView(this).apply { setBackgroundColor(WarmStyle.background);addView(body) }
         scroll.setOnApplyWindowInsetsListener { v,i ->val b=i.getInsets(WindowInsets.Type.systemBars());v.setPadding(0,b.top,0,b.bottom);i }
         setContentView(scroll);showRuns()
     }
     private fun title(text:String) { body.removeAllViews();label(text,26f) }
-    private fun label(text:String,size:Float=18f) { body.addView(TextView(this).apply { this.text=text;textSize=size;setPadding(4,12,4,12);setTextIsSelectable(true) }) }
-    private fun button(text:String,fn:()->Unit) { body.addView(Button(this).apply { this.text=text;textSize=18f;minHeight=(52*resources.displayMetrics.density).toInt();isAllCaps=false;setOnClickListener { fn() } }) }
+    private fun label(text:String,size:Float=18f) { body.addView(TextView(this).apply { this.text=text;WarmStyle.text(this);textSize=size;setPadding(4,12,4,12);setTextIsSelectable(true) }) }
+    private fun button(text:String,fn:()->Unit) { body.addView(Button(this).apply { WarmStyle.button(this);this.text=text;WarmStyle.text(this);textSize=18f;minHeight=(52*resources.displayMetrics.density).toInt();isAllCaps=false;setOnClickListener { fn() } }) }
     private fun showRuns() {
         selected=null;title("Debug · 开发调试")
         label("以下是本机技术日志。截图和页面文字可能包含个人信息，仅在需要排查时导出。")
@@ -90,7 +90,7 @@ class DebugActivity:Activity() {
         label(e.toString(2),15f)
     }
     private fun showText(text:String) {
-        val view=TextView(this).apply { this.text=text;textSize=15f;setPadding(24,24,24,24);setTextIsSelectable(true) }
+        val view=TextView(this).apply { this.text=text;WarmStyle.text(this);textSize=15f;setPadding(WarmStyle.dp(this@DebugActivity,20),WarmStyle.dp(this@DebugActivity,16),WarmStyle.dp(this@DebugActivity,20),WarmStyle.dp(this@DebugActivity,16));setBackgroundColor(WarmStyle.background);setTextIsSelectable(true) }
         AlertDialog.Builder(this).setView(ScrollView(this).apply { addView(view) }).setPositiveButton("关闭",null).show()
     }
     private fun showImage(file:File) {

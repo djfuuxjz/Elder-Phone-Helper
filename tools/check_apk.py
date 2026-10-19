@@ -7,23 +7,23 @@ import re
 import zipfile
 
 root = Path(__file__).resolve().parents[1]
-apk = root / 'dist/phone-assistant-0.1.5-debug.apk'
+apk = root / 'dist/phone-assistant-0.1.7-debug.apk'
 with zipfile.ZipFile(apk) as z:
     assert z.testzip() is None
     assert 'AndroidManifest.xml' in z.namelist() and 'classes.dex' in z.namelist()
-badging = (root / 'docs/test-results/apk-badging-0.1.5.txt').read_text()
+badging = (root / 'docs/test-results/apk-badging-0.1.7.txt').read_text()
 assert "name='cn.elder.assistant'" in badging
-assert "versionCode='6'" in badging and "versionName='0.1.5'" in badging
+assert "versionCode='8'" in badging and "versionName='0.1.7'" in badging
 # aapt2 releases use either sdkVersion or minSdkVersion for the same manifest field.
 minimum = re.search(r"^(?:minSdkVersion|sdkVersion):'(\d+)'", badging, re.M)
 assert minimum and int(minimum.group(1)) == 30
 assert "targetSdkVersion:'35'" in badging
-signature = (root / 'docs/test-results/apk-signature-0.1.5.txt').read_text()
+signature = (root / 'docs/test-results/apk-signature-0.1.7.txt').read_text()
 assert 'Verified using v2 scheme (APK Signature Scheme v2): true' in signature
 sha = hashlib.sha256(apk.read_bytes()).hexdigest()
 report = {'filename':apk.name, 'bytes':apk.stat().st_size, 'sha256':sha,
-          'package':'cn.elder.assistant', 'version':'0.1.5', 'min_sdk':30, 'target_sdk':35,
+          'package':'cn.elder.assistant', 'version':'0.1.7', 'min_sdk':30, 'target_sdk':35,
           'signature':'verified_debug', 'zip_integrity':'passed'}
-(root / 'docs/test-results/apk-0.1.5.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
-(root / 'dist/SHA256SUMS-0.1.5.txt').write_text(sha + '  ' + apk.name + '\n')
+(root / 'docs/test-results/apk-0.1.7.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
+(root / 'dist/SHA256SUMS-0.1.7.txt').write_text(sha + '  ' + apk.name + '\n')
 print(json.dumps(report, ensure_ascii=False))

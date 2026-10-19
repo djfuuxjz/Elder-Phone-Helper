@@ -1,10 +1,10 @@
 <resources>
     <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#23785B</item>
+        <item name="android:colorAccent">#9C560F</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowBackground">#F5F7F2</item>
-        <item name="android:navigationBarColor">#F5F7F2</item>
+        <item name="android:windowBackground">#FFF8ED</item>
+        <item name="android:navigationBarColor">#FFF8ED</item>
     </style>
     <string name="service_description">仅在您启动任务后读取页面，必要时截图发送给所配置的模型，显示高亮与提示。不会替您点击。调试记录保存在本机，可自行清除。</string>
 </resources>

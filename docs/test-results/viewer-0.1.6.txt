@@ -1,0 +1,19 @@
+✔ prepared and response join same request without doubling call count (0.674208ms)
+✔ same step separate attempts remain separate (0.097958ms)
+✔ sessions do not cross associate identical request ids (0.087916ms)
+✔ malformed lines are reported with original line numbers (0.4155ms)
+✔ ambiguous fallback is not guessed (0.078375ms)
+✔ attachments are local to source directory, reject traversal and ambiguity (0.122875ms)
+✔ returned decision is distinct from displayed guidance; discarded takes priority (0.069417ms)
+✔ real exported run gives independently checked totals and attachment refs (8.486041ms)
+✔ explicit app cancellation is displayed separately from transport failure (0.130459ms)
+✔ review joins request response and candidate without pretending it is a user action (0.143208ms)
+✔ automatically activated review is shown as enabled (0.062208ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 46.719917

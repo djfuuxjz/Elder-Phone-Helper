@@ -29,26 +29,27 @@ class MainActivity : Activity() {
     } }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(24),dp(16),dp(24),dp(8)); setBackgroundColor(Color.rgb(245,247,242)) }
+        val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(24),dp(16),dp(24),dp(8)); setBackgroundColor(WarmStyle.background) }
         root.setOnApplyWindowInsetsListener { v, insets ->
-            val bars=insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(dp(24),bars.top+dp(16),dp(24),bars.bottom+dp(8)); insets
+            val bars=insets.getInsets(android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.ime()); v.setPadding(dp(24),bars.top+dp(16),dp(24),bars.bottom+dp(8)); insets
         }
         body=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
         val scroll=ScrollView(this).apply { addView(body) }
         root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         val nav=LinearLayout(this)
-        nav.addView(button("任务") { showTask() },LinearLayout.LayoutParams(0,dp(64),1f))
-        nav.addView(button("我的") { showMine() },LinearLayout.LayoutParams(0,dp(64),1f))
+        nav.addView(button("任务") { showTask() },LinearLayout.LayoutParams(0,-2,1f).apply { setMargins(dp(4),dp(8),dp(4),0) })
+        nav.addView(button("我的") { showMine() },LinearLayout.LayoutParams(0,-2,1f).apply { setMargins(dp(4),dp(8),dp(4),0) })
         root.addView(nav); setContentView(root); showTask()
     }
     override fun onResume() { super.onResume(); handler.post(refresh) }
     override fun onPause() { handler.removeCallbacks(refresh); super.onPause() }
-    private fun label(text:String,size:Float=20f): TextView = TextView(this).apply { this.text=text; textSize=size; setTextColor(Color.rgb(30,51,42)); setPadding(8,16,8,16) }
+    private fun label(text:String,size:Float=20f): TextView = TextView(this).apply { this.text=text; textSize=size; WarmStyle.text(this); setPadding(dp(4),dp(12),dp(4),dp(12)) }
     private fun dp(value:Int) = (value*resources.displayMetrics.density).toInt()
-    private fun button(text:String, click:()->Unit): Button = Button(this).apply { this.text=text; textSize=20f; minHeight=dp(64); isAllCaps=false; setOnClickListener { click() } }
+    private fun button(text:String, click:()->Unit): Button = Button(this).apply { this.text=text; textSize=20f; WarmStyle.button(this,text=="给女儿打视频电话"); setOnClickListener { click() } }
     private fun reset(title:String) { body.removeAllViews(); statusView=null;permissionView=null;modelView=null; body.addView(label(title,30f)) }
     private fun showTask() {
         reset("手机助手")
+        body.addView(CatView(this),LinearLayout.LayoutParams(-1,dp(120)))
         body.addView(label("一步一步，陪您操作手机",22f))
         statusView=label(AppRuntime.status).also { body.addView(it) }
         body.addView(button("给女儿打视频电话") {
@@ -77,6 +78,12 @@ class MainActivity : Activity() {
         val model=EditText(this).apply { hint="模型名称"; setText(settings.model) }
         val key=EditText(this).apply { hint=if(settings.hasKey()) "已保存密钥；留空保持不变" else "填写您的 API Key"; inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD }
         val vision=CheckBox(this).apply { text="模型支持图片输入"; textSize=18f; isChecked=settings.vision }
+        listOf(endpoint,model,key).forEach { field ->
+            WarmStyle.text(field);field.textSize=20f;field.minHeight=dp(56)
+            field.background=WarmStyle.surface(this,Color.WHITE,14)
+            field.setPadding(dp(12),dp(12),dp(12),dp(12))
+            field.layoutParams=LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8);bottomMargin=dp(8) }
+        }
         body.addView(endpoint); body.addView(model); body.addView(key); body.addView(vision)
         body.addView(button("保存模型配置") {
             if(AppRuntime.active) { toast("请先停止引导再修改模型"); return@button }

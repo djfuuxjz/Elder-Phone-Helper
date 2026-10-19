@@ -1,6 +1,6 @@
 {
   "totals": {
-    "tests": 142,
+    "tests": 145,
     "failures": 0,
     "errors": 0,
     "skipped": 0
@@ -114,6 +114,13 @@
     {
       "name": "cn.elder.assistant.TargetAppLauncherTest",
       "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cn.elder.assistant.WarmPresentationTest",
+      "tests": 3,
       "failures": 0,
       "errors": 0,
       "skipped": 0

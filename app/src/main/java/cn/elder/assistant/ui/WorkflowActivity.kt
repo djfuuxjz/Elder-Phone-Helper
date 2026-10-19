@@ -19,13 +19,13 @@ class WorkflowActivity:Activity() {
     override fun onCreate(savedInstanceState:Bundle?) {
         super.onCreate(savedInstanceState)
         exportText=savedInstanceState?.getString("export")
-        body=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setPadding(24,24,24,24) }
-        val scroll=ScrollView(this).apply { addView(body) }
+        body=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setPadding(WarmStyle.dp(this@WorkflowActivity,20),WarmStyle.dp(this@WorkflowActivity,16),WarmStyle.dp(this@WorkflowActivity,20),WarmStyle.dp(this@WorkflowActivity,16));setBackgroundColor(WarmStyle.background) }
+        val scroll=ScrollView(this).apply { setBackgroundColor(WarmStyle.background);addView(body) }
         scroll.setOnApplyWindowInsetsListener { v,i -> val b=i.getInsets(WindowInsets.Type.systemBars());v.setPadding(0,b.top,0,b.bottom);i }
         setContentView(scroll);showList()
     }
-    private fun label(text:String) { body.addView(TextView(this).apply { this.text=text;textSize=18f;setPadding(4,16,4,16);setTextIsSelectable(true) }) }
-    private fun button(text:String,action:()->Unit) { body.addView(Button(this).apply { this.text=text;minHeight=(52*resources.displayMetrics.density).toInt();setOnClickListener { attempt(action) } }) }
+    private fun label(text:String) { body.addView(TextView(this).apply { this.text=text;WarmStyle.text(this);textSize=18f;setPadding(4,16,4,16);setTextIsSelectable(true) }) }
+    private fun button(text:String,action:()->Unit) { body.addView(Button(this).apply { WarmStyle.button(this);this.text=text;WarmStyle.text(this);minHeight=(52*resources.displayMetrics.density).toInt();setOnClickListener { attempt(action) } }) }
     private fun attempt(action:()->Unit) { runCatching(action).onFailure { Toast.makeText(this,it.message ?: "操作失败",Toast.LENGTH_LONG).show() } }
     private fun idle() { check(!AppRuntime.active && !AppRuntime.reviewRunning) { "请先停止任务并等待复盘完成" } }
     private fun showList() {

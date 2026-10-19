@@ -6,6 +6,8 @@ import android.view.*
 import android.widget.*
 import cn.elder.assistant.core.Box
 import cn.elder.assistant.observation.Coordinates
+import cn.elder.assistant.ui.WarmStyle
+import cn.elder.assistant.ui.CatView
 
 class GuideOverlay(private val service: AccessibilityService, private val onStop:()->Unit, private val onRetry:()->Unit,
     private val wm:WindowManager=service.getSystemService(WindowManager::class.java)) {
@@ -40,14 +42,21 @@ class GuideOverlay(private val service: AccessibilityService, private val onStop
                 lp.gravity=Gravity.TOP or Gravity.START; lp.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
                 wm.addView(view,lp); highlight=view
             }
-            val layout=LinearLayout(service).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(12),dp(8),dp(12),dp(8)); setBackgroundColor(Color.rgb(255,253,242)) }
+            val layout=LinearLayout(service).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(12),dp(8),dp(12),dp(8)); setBackgroundColor(WarmStyle.background) }
             val handle=DragArea(service).apply { text="按住这里拖动";textSize=16f;gravity=Gravity.CENTER;minHeight=dp(48);contentDescription="拖动引导栏" }
-            layout.addView(handle)
-            val message=DragArea(service).apply { text=instruction; textSize=20f; setTextColor(Color.rgb(28,52,41)); maxLines=4 }
-            layout.addView(message)
-            val row=LinearLayout(service)
-            row.addView(Button(service).apply { text="停止"; textSize=18f; minHeight=dp(48); setOnClickListener { hide();onStop() } },LinearLayout.LayoutParams(0,-2,1f))
-            if(retry) row.addView(Button(service).apply { text=retryLabel; textSize=18f; minHeight=dp(48); setOnClickListener { onRetry() } },LinearLayout.LayoutParams(0,-2,1f))
+            val header=LinearLayout(service).apply { gravity=Gravity.CENTER_VERTICAL }
+            header.addView(CatView(service),LinearLayout.LayoutParams(dp(72),dp(56)))
+            header.addView(handle,LinearLayout.LayoutParams(0,-2,1f))
+            WarmStyle.text(handle)
+            layout.addView(header)
+            val message=DragArea(service).apply { text=instruction; textSize=20f; WarmStyle.text(this);setPadding(dp(12),dp(12),dp(12),dp(12));background=WarmStyle.surface(service,Color.WHITE) }
+            val messageScroll=ScrollView(service).apply { addView(message) };layout.addView(messageScroll)
+            val stacked=service.resources.configuration.fontScale>1.3f || retryLabel.length>4
+            val row=LinearLayout(service).apply { orientation=if(stacked) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL }
+            fun actionParams()=if(stacked) LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) }
+                else LinearLayout.LayoutParams(0,-2,1f).apply { topMargin=dp(8);leftMargin=dp(3);rightMargin=dp(3) }
+            row.addView(Button(service).apply { text="停止"; WarmStyle.button(this); setOnClickListener { hide();onStop() } },actionParams())
+            if(retry) row.addView(Button(service).apply { text=retryLabel; WarmStyle.button(this); setOnClickListener { onRetry() } },actionParams())
             if(controls) layout.addView(row)
             val metrics=wm.currentWindowMetrics
             val screen=metrics.bounds
@@ -55,6 +64,13 @@ class GuideOverlay(private val service: AccessibilityService, private val onStop
             val usableWidth=(screen.width()-insets.left-insets.right).coerceAtLeast(1)
             val usableHeight=(screen.height()-insets.top-insets.bottom).coerceAtLeast(1)
             val width=minOf(dp(340),(usableWidth-dp(24)).coerceAtLeast(1))
+            val innerWidth=(width-layout.paddingLeft-layout.paddingRight).coerceAtLeast(1)
+            val exactInner=View.MeasureSpec.makeMeasureSpec(innerWidth,View.MeasureSpec.EXACTLY)
+            val natural=View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.UNSPECIFIED)
+            header.measure(exactInner,natural);row.measure(exactInner,natural);message.measure(exactInner,natural)
+            val availableMessage=((usableHeight*0.7f).toInt()-layout.paddingTop-layout.paddingBottom-header.measuredHeight-(if(controls) row.measuredHeight else 0)).coerceAtLeast(1)
+            val scrollNeeded=message.measuredHeight>availableMessage
+            messageScroll.layoutParams=LinearLayout.LayoutParams(-1,minOf(message.measuredHeight,availableMessage))
             layout.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(usableHeight,View.MeasureSpec.AT_MOST))
             val height=layout.measuredHeight.coerceAtMost(usableHeight)
             val lp=WindowManager.LayoutParams(width,height,WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,controlFlags(),PixelFormat.TRANSLUCENT)
@@ -88,7 +104,7 @@ class GuideOverlay(private val service: AccessibilityService, private val onStop
                     else -> false
                 }
             }
-            handle.setOnTouchListener(drag);message.setOnTouchListener(drag)
+            handle.setOnTouchListener(drag);if(!scrollNeeded) message.setOnTouchListener(drag)
             wm.addView(layout,lp);card=layout
 
         } catch(e:RuntimeException) { hide(); throw e }
