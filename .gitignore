@@ -1,0 +1,30 @@
+.toolchain/
+.gradle/
+.kotlin/
+local.properties
+**/build/
+*.jks
+*.keystore
+*.hprof
+.DS_Store
+dist/
+
+# Private device exports, local-only references and sync workspace
+/0 debug/
+/日志查看器/preview.png
+/.github-sync/
+/.idea/
+/.env
+/.env.*
+*.pem
+*.p12
+__pycache__/
+*.pyc
+/Juyu-phone-agent-v0.2.0.apk
+/AGENTS.md
+/sources/
+/Codex 图像 2026年9月29日 11_18_46.png
+
+# Deliberately versioned release deliverables (the original dist ignore is overridden)
+!dist/
+!dist/**

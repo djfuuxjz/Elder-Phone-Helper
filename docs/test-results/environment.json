@@ -1,0 +1,8 @@
+{
+  "timestamp": "2026-10-18",
+  "toolchain_checks": "passed",
+  "java": "openjdk version \"17.0.20.1\" 2026-08-18 LTS\nOpenJDK Runtime Environment Zulu17.68+203-CA (build 17.0.20.1+1-LTS)\nOpenJDK 64-Bit Server VM Zulu17.68+203-CA (build 17.0.20.1+1-LTS, mixed mode, sharing)",
+  "gradle_sha256": "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6",
+  "physical_wechat": "pending_user_device_test",
+  "live_model": "pending_user_key"
+}

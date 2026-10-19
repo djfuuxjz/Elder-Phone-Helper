@@ -1,0 +1,16 @@
+✔ prepared and response join same request without doubling call count (1.276875ms)
+✔ same step separate attempts remain separate (0.158875ms)
+✔ sessions do not cross associate identical request ids (0.104625ms)
+✔ malformed lines are reported with original line numbers (0.159209ms)
+✔ ambiguous fallback is not guessed (0.587959ms)
+✔ attachments are local to source directory, reject traversal and ambiguity (0.157791ms)
+✔ returned decision is distinct from displayed guidance; discarded takes priority (0.075459ms)
+✔ real exported run gives independently checked totals and attachment refs (8.081792ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 48.402458
