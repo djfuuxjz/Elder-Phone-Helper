@@ -10,6 +10,7 @@ object AppRuntime {
     var modelStatus = "模型连接尚未验证"
     var debugWaitForStart = false
     var start: (() -> Unit)? = null
+    var startCustom: ((TaskGoal) -> Unit)? = null
     var stop: (() -> Unit)? = null
     var retry: (() -> Unit)? = null
 }

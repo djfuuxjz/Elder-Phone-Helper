@@ -1,0 +1,11 @@
+{
+  "filename": "phone-assistant-0.2.0-debug.apk",
+  "bytes": 5185278,
+  "sha256": "5678608aee7dffac31af716f2dd77623ac7c3de67f7e8c428a6e5a1744b83e59",
+  "package": "cn.elder.assistant",
+  "version": "0.2.0",
+  "min_sdk": 30,
+  "target_sdk": 35,
+  "signature": "verified_debug",
+  "zip_integrity": "passed"
+}

@@ -26,8 +26,10 @@ class WarmPresentationTest {
     private fun all(v:View):List<View> = listOf(v)+if(v is ViewGroup) (0 until v.childCount).flatMap { all(v.getChildAt(it)) } else emptyList()
     private fun render(v:View,w:Int,h:Int,name:String) {
         v.measure(View.MeasureSpec.makeMeasureSpec(w,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(h,View.MeasureSpec.EXACTLY));v.layout(0,0,w,h)
+        v.viewTreeObserver.dispatchOnGlobalLayout()
+        v.measure(View.MeasureSpec.makeMeasureSpec(w,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(h,View.MeasureSpec.EXACTLY));v.layout(0,0,w,h)
         val bitmap=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);v.draw(Canvas(bitmap))
-        val dir=File("../docs/design/ui-0.1.7").apply { mkdirs() }
+        val dir=File("../docs/design/ui-0.2.0").apply { mkdirs() }
         File(dir,"$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG,100,it) }
         assertTrue(bitmap.getPixel(w/2,h/2)!=0);bitmap.recycle()
     }

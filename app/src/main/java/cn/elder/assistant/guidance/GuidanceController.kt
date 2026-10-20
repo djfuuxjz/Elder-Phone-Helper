@@ -45,33 +45,39 @@ class GuidanceController(private val service:AccessibilityService) {
     private var endpoint=""
     private var model=""
     private var vision=true
+    private var task=TaskGoal.DEFAULT
     private var closed=false
     private var launchedFromHome=false
     private val homePackage=service.packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),0)?.activityInfo?.packageName
     private val ticker=object:Runnable { override fun run() { if(flow.active && !closed) { runCatching { poll() }.onFailure { attention(it.message ?: "读取页面失败") }; handler.postDelayed(this,600) } } }
-    fun start() {
+    fun start(requestedTask:TaskGoal=TaskGoal.DEFAULT) {
         if(flow.active || closed) return
+        task=requestedTask
         successNotice.cancel()
         cancelReview("开始新任务，取消上一任务复盘")
         try {
             val cfg=Settings(service);key=cfg.apiKey();endpoint=cfg.endpoint;model=cfg.model;vision=cfg.vision
             require(key.isNotBlank()) { "请先在我的页面填写模型密钥" }
-            log=RunLog(File(service.filesDir,"runs"),listOf(key))
-            workflow=workflows.selected(AppRuntime.workflowTrialId);AppRuntime.workflowTrialId=null
+            log=RunLog(File(service.filesDir,"runs"),listOf(key),task=task)
+            workflow=if(task.fixed) workflows.selected(AppRuntime.workflowTrialId) else null
+            if(task.fixed) AppRuntime.workflowTrialId=null
             flow.start();history.clear();stable.reset();epoch.reset();lastStructure=null;needImage=false
             launchedFromHome=false
             timing.reset(AppRuntime.debugWaitForStart)
             AppRuntime.debugWaitForStart=false
             lastProgress=SystemClock.elapsedRealtime();stepStarted=lastProgress
             AppRuntime.active=true
-            logEvent("start",JSONObject().put("model",model).put("provider",endpoint).put("prompt_version",TaskSpec.PROMPT_VERSION)
+            logEvent("start",JSONObject().put("model",model).put("provider",endpoint).put("prompt_version",if(task.fixed) TaskSpec.PROMPT_VERSION else "custom-1")
                 .put("workflow",workflow ?: JSONObject.NULL).put("device",android.os.Build.MODEL).put("android",android.os.Build.VERSION.RELEASE).put("wait_for_start",timing.waiting))
             speaker=Speaker(service) { reason -> handler.post { if(flow.active) logEvent("tts_error",JSONObject().put("error",reason)) } }
             if(timing.waiting) {
                 AppRuntime.status="请准备测试起点，再点从当前页开始"
                 overlay.show(AppRuntime.status,retry=true,retryLabel="从当前页开始")
             } else {
-                if(reader.capture()?.packageName=="com.tencent.mm") show("正在读取微信页面",speak=false)
+                if(!task.fixed) {
+                    service.startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    show("请稍候，正在从桌面开始引导",speak=false)
+                } else if(reader.capture()?.packageName=="com.tencent.mm") show("正在读取微信页面",speak=false)
                 else openTargetApp()
             }
             handler.post(ticker)
@@ -84,11 +90,11 @@ class GuidanceController(private val service:AccessibilityService) {
         if(elapsed!=null && elapsed>300000) { attention("本次引导已等待较久，请停止后重新开始");return }
         if(elapsed!=null && now-lastProgress>60000) { attention("暂时没有看到页面变化，请重试或停止");return }
         val s=reader.capture() ?: run { overlay.hide();speaker?.cancel();cancelRequest("当前页面无法读取，取消旧请求");return }
-        if(s.packageName !in setOf("com.tencent.mm",homePackage)) {
-            if(flow.fingerprint!=null) attention("请先回到微信或桌面，再点重试")
+        if(!task.observes(s.packageName,service.packageName,homePackage)) {
+            if(task.fixed && flow.fingerprint!=null) attention("请先回到微信或桌面，再点重试")
             return
         }
-        if(s.packageName==homePackage) {
+        if(task.fixed && s.packageName==homePackage) {
             if(!launchedFromHome) { launchedFromHome=true;cancelRequest("回到桌面，直接打开微信");openTargetApp() }
             return
         }
@@ -128,7 +134,7 @@ class GuidanceController(private val service:AccessibilityService) {
             try {
                 val imageRef=image?.let { thisLog.artifact("${requestId}.jpg",it) }
                 val p=DeepSeekProvider(endpoint,model,key,vision);provider=p
-                val body=p.body(ModelInput(thisLog.id,token.step,token.attempt,s,history.snapshot(),image,WorkflowGuide.context(workflow,s)))
+                val body=p.body(ModelInput(thisLog.id,token.step,token.attempt,s,history.snapshot(),image,if(task.fixed) WorkflowGuide.context(workflow,s) else null,task))
                 val logged=JSONObject(body.toString())
                 if(imageRef!=null) logged.getJSONArray("messages").getJSONObject(1).getJSONArray("content").getJSONObject(1)
                     .getJSONObject("image_url").put("url","local:$imageRef")
@@ -225,7 +231,7 @@ class GuidanceController(private val service:AccessibilityService) {
         logEvent("manual_retry");show("正在重新看页面",speak=false)
     }
     fun pageEvent(packageName:String) {
-        if(flow.active && packageName in setOf("com.tencent.mm",homePackage)) epoch.pageEvent()
+        if(flow.active && task.observes(packageName,service.packageName,homePackage)) epoch.pageEvent()
     }
     private fun attention(reason:String) { if(!flow.active) return;cancelRequest("任务暂停：$reason");flow.pause();logEvent("attention",JSONObject().put("error",reason));show(reason,retry=true) }
     private fun show(text:String,target:Box?=null,retry:Boolean=false,speak:Boolean=true) {
@@ -251,10 +257,11 @@ class GuidanceController(private val service:AccessibilityService) {
         if(wasActive) flow.finish(result) // Invalidate callbacks before cleanup or logging.
         cancelRequest(reason ?: if(result==Phase.STOPPED) "用户停止任务" else "任务结束：${result.name}");provider=null;handler.removeCallbacks(ticker);overlay.hide();speaker?.close();speaker=null;key=""
         if(wasActive) logEvent("end",JSONObject().put("result",result.name).put("reason",reason ?: if(result==Phase.STOPPED) "用户停止任务" else "任务结束").put("duration_ms",timing.elapsed(SystemClock.elapsedRealtime()) ?: JSONObject.NULL))
-        AppRuntime.active=false;AppRuntime.status=if(result==Phase.COMPLETED) "已向女儿发起视频通话" else "引导已停止，可重新开始"
+        AppRuntime.active=false;AppRuntime.status=if(result==Phase.COMPLETED) task.completionMessage else "引导已停止，可重新开始"
         if(wasActive && result==Phase.COMPLETED) {
             successNotice.show()
-            log?.let { startReview(it,reviewKey,workflow) }
+            if(task.fixed) log?.let { startReview(it,reviewKey,workflow) }
+            else logEvent("workflow_review_not_applicable",JSONObject().put("reason","自定义任务不使用固定视频通话流程库"))
         }
     }
     private fun cancelReview(reason:String) {

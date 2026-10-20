@@ -64,6 +64,7 @@ class DebugActivity:Activity() {
                 }
                 button("填写真机验收标注") { annotate(dir) }
                 result.fold({ (events,summary) ->
+                    label("任务目标："+events.firstOrNull()?.optString("goal").orEmpty())
                     label("调用 ${summary.getInt("calls")} 次（复盘 ${summary.getInt("review_calls")} 次） · 错误 ${summary.getInt("error_count")} 次\n状态：${summary.getString("result")}\nP95：${summary.opt("all_latency_p95_ms")} ms")
                     button("完整统计") { showText(summary.toString(2)) }
                     File(dir,"annotation.json").takeIf { it.exists() }?.let { label("人工标注：\n"+it.readText()) }
@@ -106,9 +107,9 @@ class DebugActivity:Activity() {
         if(AppRuntime.active || AppRuntime.reviewRunning) { alert("请先停止任务并等待流程复盘结束后标注");return }
         val form=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setPadding(32,16,32,16) }
         val case=EditText(this).apply { hint="用例编号，例如 E01" }
-        val success=CheckBox(this).apply { text="实际向女儿发起视频呼叫" }
+        val success=CheckBox(this).apply { text="实际完成本次任务目标" }
         val errors=EditText(this).apply { hint="错误指引次数";inputType=android.text.InputType.TYPE_CLASS_NUMBER;setText("0") }
-        val note=EditText(this).apply { hint="设备/微信版本、失败原因和错误步骤" }
+        val note=EditText(this).apply { hint="设备/应用版本、失败原因和错误步骤" }
         listOf<View>(case,success,errors,note).forEach { form.addView(it) }
         val dialog=AlertDialog.Builder(this).setTitle("人工验收记录").setView(form).setPositiveButton("保存",null).setNegativeButton("取消",null).create()
         dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {

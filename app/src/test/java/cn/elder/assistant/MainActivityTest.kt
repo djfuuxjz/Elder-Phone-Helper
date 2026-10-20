@@ -19,11 +19,12 @@ import android.os.Looper
 @Config(sdk=[35])
 class MainActivityTest {
     private fun all(view: View): List<View> = listOf(view) + if(view is ViewGroup) (0 until view.childCount).flatMap { all(view.getChildAt(it)) } else emptyList()
-    @Test fun homeContainsOnlyFixedTaskAndTwoTabs() {
+    @Test fun homeContainsVoiceCustomTaskShortcutAndTwoTabs() {
         Robolectric.buildActivity(MainActivity::class.java).setup().use { c ->
             val texts=all(c.get().window.decorView).filterIsInstance<TextView>().map { it.text.toString() }
             assertTrue(texts.containsAll(listOf("任务","我的","给女儿打视频电话")))
-            assertFalse(texts.any { it.contains("登录") || it.contains("语音输入") })
+            assertTrue(texts.containsAll(listOf("语音输入任务","开始引导")))
+            assertFalse(texts.any { it.contains("登录") })
         }
     }
     @Test fun mineShowsPermissionAndModelConfiguration() {

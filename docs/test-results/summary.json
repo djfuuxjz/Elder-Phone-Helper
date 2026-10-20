@@ -1,11 +1,25 @@
 {
   "totals": {
-    "tests": 145,
+    "tests": 158,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
   "suites": [
+    {
+      "name": "cn.elder.assistant.CustomControllerTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cn.elder.assistant.CustomTaskTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
     {
       "name": "cn.elder.assistant.DebugActivityTest",
       "tests": 3,
@@ -114,6 +128,13 @@
     {
       "name": "cn.elder.assistant.TargetAppLauncherTest",
       "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cn.elder.assistant.VoiceTaskActivityTest",
+      "tests": 7,
       "failures": 0,
       "errors": 0,
       "skipped": 0

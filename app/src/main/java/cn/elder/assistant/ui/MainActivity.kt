@@ -14,9 +14,17 @@ import android.view.View
 import android.widget.*
 import cn.elder.assistant.config.Settings
 import cn.elder.assistant.core.AppRuntime
+import cn.elder.assistant.core.TaskGoal
+import cn.elder.assistant.speech.VoiceTaskInput
 
 class MainActivity : Activity() {
     private lateinit var body: LinearLayout
+    private lateinit var shortcut: LinearLayout
+    private lateinit var rootLayout:LinearLayout
+    private var taskInput:EditText?=null
+    private var draft=""
+    private var mine=false
+    private var voicePending=false
     private var statusView: TextView? = null
     private var permissionView: TextView? = null
     private var modelView: TextView? = null
@@ -29,45 +37,112 @@ class MainActivity : Activity() {
     } }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        draft=savedInstanceState?.getString("task_draft").orEmpty()
+        mine=savedInstanceState?.getBoolean("mine") ?: false
+        voicePending=savedInstanceState?.getBoolean("voice_pending") ?: false
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(24),dp(16),dp(24),dp(8)); setBackgroundColor(WarmStyle.background) }
+        rootLayout=root
+        root.viewTreeObserver.addOnGlobalLayoutListener { positionShortcut() }
         root.setOnApplyWindowInsetsListener { v, insets ->
             val bars=insets.getInsets(android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.ime()); v.setPadding(dp(24),bars.top+dp(16),dp(24),bars.bottom+dp(8)); insets
         }
         body=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
-        val scroll=ScrollView(this).apply { addView(body) }
+        val scroll=ScrollView(this).apply { isFillViewport=true;addView(body) }
         root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
+        shortcut=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
+        shortcut.addView(label("快捷任务",18f))
+        shortcut.addView(button("给女儿打视频电话") { begin(TaskGoal.DEFAULT) })
+        root.addView(shortcut)
         val nav=LinearLayout(this)
         nav.addView(button("任务") { showTask() },LinearLayout.LayoutParams(0,-2,1f).apply { setMargins(dp(4),dp(8),dp(4),0) })
         nav.addView(button("我的") { showMine() },LinearLayout.LayoutParams(0,-2,1f).apply { setMargins(dp(4),dp(8),dp(4),0) })
-        root.addView(nav); setContentView(root); showTask()
+        root.addView(nav); setContentView(root); if(mine) showMine() else showTask()
     }
     override fun onResume() { super.onResume(); handler.post(refresh) }
     override fun onPause() { handler.removeCallbacks(refresh); super.onPause() }
     private fun label(text:String,size:Float=20f): TextView = TextView(this).apply { this.text=text; textSize=size; WarmStyle.text(this); setPadding(dp(4),dp(12),dp(4),dp(12)) }
     private fun dp(value:Int) = (value*resources.displayMetrics.density).toInt()
     private fun button(text:String, click:()->Unit): Button = Button(this).apply { this.text=text; textSize=20f; WarmStyle.button(this,text=="给女儿打视频电话"); setOnClickListener { click() } }
-    private fun reset(title:String) { body.removeAllViews(); statusView=null;permissionView=null;modelView=null; body.addView(label(title,30f)) }
+    private fun reset(title:String) { if(shortcut.parent===body) { body.removeView(shortcut);rootLayout.addView(shortcut,1) };taskInput?.let { draft=it.text.toString() };taskInput=null;body.removeAllViews(); statusView=null;permissionView=null;modelView=null; body.addView(label(title,30f)) }
+    private fun positionShortcut() {
+        if(!::shortcut.isInitialized || mine || rootLayout.height==0) return
+        val nav=rootLayout.getChildAt(rootLayout.childCount-1)
+        val remaining=rootLayout.height-rootLayout.paddingTop-rootLayout.paddingBottom-nav.measuredHeight-shortcut.measuredHeight
+        // Keep input usable with a keyboard or large text on a small screen.
+        // In compact space the same shortcut remains last in the scrollable content.
+        if(remaining<dp(240) && shortcut.parent!==body) {
+            (shortcut.parent as? android.view.ViewGroup)?.removeView(shortcut);body.addView(shortcut)
+        } else if(remaining>=dp(240) && shortcut.parent===body) {
+            body.removeView(shortcut);rootLayout.addView(shortcut,1)
+        }
+    }
     private fun showTask() {
+        mine=false;shortcut.visibility=View.VISIBLE
         reset("手机助手")
-        body.addView(CatView(this),LinearLayout.LayoutParams(-1,dp(120)))
-        body.addView(label("一步一步，陪您操作手机",22f))
-        statusView=label(AppRuntime.status).also { body.addView(it) }
-        body.addView(button("给女儿打视频电话") {
-            if(AppRuntime.active) { toast("任务正在进行，请按屏幕提示操作"); return@button }
-            if(!AppRuntime.connected) { showPermission(); return@button }
-            if(!Settings(this).hasKey()) { toast("请先在“我的”中配置模型"); showMine(); return@button }
-            AlertDialog.Builder(this).setTitle("开始操作引导")
-                .setMessage("助手将读取当前页面，必要时把截图发送给您配置的模型。每一步由您亲自点击。输入输出和截图会保存在本机 Debug 中，供排查问题，可随时清除。\n\n开始后，助手会打开微信，再由您按提示操作。")
-                .setPositiveButton("开始") { _,_ -> AppRuntime.start?.invoke() }.setNegativeButton("取消",null).show()
+        body.addView(CatView(this),LinearLayout.LayoutParams(-1,dp(100)))
+        body.addView(label("今天想做什么？",24f))
+        body.addView(button("语音输入任务") { speakTask() })
+        taskInput=EditText(this).apply {
+            hint="说出或输入想做的事，例如：打开设置调大字体"
+            contentDescription="自定义任务内容"
+            textSize=20f;minLines=2;gravity=Gravity.TOP
+            inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            background=WarmStyle.surface(this@MainActivity,Color.WHITE,14)
+            WarmStyle.text(this);setPadding(dp(12),dp(12),dp(12),dp(12));setText(draft)
+        }.also { body.addView(it,LinearLayout.LayoutParams(-1,-2)) }
+        body.addView(button("开始引导") {
+            runCatching { TaskGoal.custom(taskInput?.text.toString()) }
+                .onSuccess { begin(it) }.onFailure { toast(it.message ?: "请填写任务") }
         })
+        statusView=label(AppRuntime.status).also { body.addView(it) }
         body.addView(button("停止当前引导") { AppRuntime.stop?.invoke() })
         body.addView(label("助手只提示位置，不会替您点击。",18f))
+        body.addView(label("语音由手机的识别服务处理，可能需要联网；本助手不保存录音。",16f))
+    }
+    private fun begin(task:TaskGoal) {
+        if(AppRuntime.active) { toast("任务正在进行，请按屏幕提示操作");return }
+        if(!AppRuntime.connected) { showPermission();return }
+        if(!Settings(this).hasKey()) { toast("请先在“我的”中配置模型");showMine();return }
+        val launch=if(task.fixed) "开始后，助手会打开微信，再由您按提示操作。" else "任务：${task.goal}\n开始后返回桌面，由您按提示操作。"
+        AlertDialog.Builder(this).setTitle("开始操作引导")
+            .setMessage("助手将读取当前页面，必要时把截图发送给您配置的模型。每一步由您亲自点击。输入输出和截图会保存在本机 Debug 中，供排查问题，可随时清除。\n\n$launch")
+            .setPositiveButton("开始") { _,_ ->
+                if(AppRuntime.active) { toast("任务正在进行");return@setPositiveButton }
+                if(!AppRuntime.connected) { showPermission();return@setPositiveButton }
+                if(task.fixed) AppRuntime.start?.invoke() else AppRuntime.startCustom?.invoke(task)
+            }.setNegativeButton("取消",null).show()
+    }
+    private fun speakTask() {
+        if(AppRuntime.active) { toast("请先停止当前引导，再输入新任务");return }
+        if(voicePending) return
+        voicePending=true
+        try { startActivityForResult(VoiceTaskInput.intent(),VoiceTaskInput.REQUEST) }
+        catch(_:android.content.ActivityNotFoundException) { voicePending=false;toast("手机没有可用的语音识别服务，请直接输入文字，也可使用键盘的语音输入") }
+        catch(_:SecurityException) { voicePending=false;toast("无法打开语音识别，请检查系统设置或直接输入文字") }
+    }
+    @Deprecated("Android legacy activity result bridge")
+    override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?) {
+        super.onActivityResult(requestCode,resultCode,data)
+        if(requestCode!=VoiceTaskInput.REQUEST || !voicePending) return
+        voicePending=false
+        if(resultCode!=RESULT_OK) { toast("语音输入已取消或未识别，请重试或直接输入文字");return }
+        runCatching { VoiceTaskInput.result(data) }.onSuccess {
+            draft=it;taskInput?.setText(it)
+            if(mine) showTask()
+            toast("已识别，请核对任务后点开始引导")
+        }.onFailure { toast(it.message ?: "没有听清，请重试") }
+    }
+    override fun onSaveInstanceState(outState:Bundle) {
+        outState.putString("task_draft",taskInput?.text?.toString() ?: draft)
+        outState.putBoolean("mine",mine);outState.putBoolean("voice_pending",voicePending)
+        super.onSaveInstanceState(outState)
     }
     private fun showPermission() {
         AlertDialog.Builder(this).setTitle("开启操作引导权限").setMessage("在系统无障碍设置中找到“手机助手 · 操作引导”并开启。返回这里后即可开始。")
             .setPositiveButton("打开设置") { _,_-> startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS)) }.setNegativeButton("稍后",null).show()
     }
     private fun showMine() {
+        mine=true;shortcut.visibility=View.GONE
         reset("我的")
         val settings=Settings(this)
         permissionView=label(if(AppRuntime.connected) "无障碍服务已连接" else "无障碍服务未开启").also { body.addView(it) }
