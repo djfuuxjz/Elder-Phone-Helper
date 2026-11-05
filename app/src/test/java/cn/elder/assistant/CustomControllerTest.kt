@@ -36,6 +36,7 @@ class CustomControllerTest {
             controller.stop(Phase.COMPLETED)
             assertFalse(flow.accepts(token));assertFalse(AppRuntime.active);assertEquals("任务已成功",AppRuntime.status)
             assertFalse(AppRuntime.reviewRunning)
+            controller.awaitLogs()
             assertTrue(RunMetrics.events(log.directory).any { it.getString("event")=="workflow_review_not_applicable" })
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(1000))
             assertFalse(flow.observe("new-page"));assertEquals(Phase.COMPLETED,flow.phase)

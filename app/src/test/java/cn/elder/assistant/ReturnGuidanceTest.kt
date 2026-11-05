@@ -28,7 +28,7 @@ class ReturnGuidanceTest {
         assertEquals(box,DecisionCodec.target(decision().copy(box=box),s))
         assertThrows(IllegalArgumentException::class.java) { DecisionCodec.target(decision().copy(box=Box(0,0,1200,2670)),s) }
         val stale=assertThrows(IllegalStateException::class.java) { DecisionCodec.target(decision().copy(node="old"),s) }
-        assertEquals("目标节点不属于当前页面",stale.message)
+        assertTrue(stale.message!!.startsWith("目标节点不属于当前页面"))
     }
     @Test fun controllerRequestsLocationRatherThanShowingVagueFirstBackInstruction() {
         val service=Robolectric.buildService(GuideService::class.java).create();val c=GuidanceController(service.get())

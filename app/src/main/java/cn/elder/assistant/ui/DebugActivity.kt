@@ -43,9 +43,9 @@ class DebugActivity:Activity() {
         button("刷新") { showRuns() }
         button("返回") { finish() }
         button("清理全部调试记录") {
-            if(AppRuntime.active || AppRuntime.reviewRunning) { alert("请先停止任务并等待流程复盘结束");return@button }
+            if(AppRuntime.active || AppRuntime.reviewRunning || cn.elder.assistant.logging.EvidenceWork.pending) { alert("请先停止任务，等待复盘和页面证据保存结束");return@button }
             AlertDialog.Builder(this).setTitle("清理调试记录？").setMessage("将删除本机的模型日志、页面快照和验收标注。请先导出需要保留的记录。")
-                .setPositiveButton("清理") { _,_-> runCatching { check(root.deleteRecursively()) }.onSuccess { showRuns() }.onFailure { alert("清理失败") } }.setNegativeButton("取消",null).show()
+                .setPositiveButton("清理") { _,_-> runCatching { check(root.deleteRecursively()) { "无法删除部分调试文件，请检查文件是否被占用" } }.onSuccess { showRuns() }.onFailure { alert("清理失败：${it.message}") } }.setNegativeButton("取消",null).show()
         }
         val runs=root.listFiles()?.filter { it.isDirectory && it.name.startsWith("run_") }?.sortedByDescending { cn.elder.assistant.logging.RunNames.time(it) }.orEmpty()
         if(runs.isEmpty()) label("还没有运行日志。请先完成模型配置并启动一次任务。")
@@ -59,7 +59,7 @@ class DebugActivity:Activity() {
                 if(isDestroyed || selected!=dir) return@runOnUiThread
                 title(dir.name);button("返回日志列表") { showRuns() }
                 button("导出本次调试包") {
-                    if(AppRuntime.active || AppRuntime.reviewRunning) { alert("请先停止任务并等待流程复盘结束，保证导出数据完整");return@button }
+                    if(AppRuntime.active || AppRuntime.reviewRunning || cn.elder.assistant.logging.EvidenceWork.pending) { alert("请先停止任务，等待复盘和页面证据保存结束，保证导出数据完整");return@button }
                     startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/zip").putExtra(Intent.EXTRA_TITLE,cn.elder.assistant.logging.RunNames.exportName(dir)),101)
                 }
                 button("填写真机验收标注") { annotate(dir) }
@@ -104,7 +104,7 @@ class DebugActivity:Activity() {
         }
     }
     private fun annotate(dir:File) {
-        if(AppRuntime.active || AppRuntime.reviewRunning) { alert("请先停止任务并等待流程复盘结束后标注");return }
+        if(AppRuntime.active || AppRuntime.reviewRunning || cn.elder.assistant.logging.EvidenceWork.pending) { alert("请先停止任务，等待复盘和页面证据保存结束后标注");return }
         val form=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setPadding(32,16,32,16) }
         val case=EditText(this).apply { hint="用例编号，例如 E01" }
         val success=CheckBox(this).apply { text="实际完成本次任务目标" }

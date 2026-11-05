@@ -1,0 +1,1 @@
+PASS: browser import, tree overlay, bidirectional selection, 50/100/200% zoom, filters, model highlight, truncation status, diagnostic propagation, raw JSON, raw image toggle, clear; zero uncaught JS errors.

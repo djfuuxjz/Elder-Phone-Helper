@@ -21,6 +21,9 @@ class Settings(context: Context) {
     var vision: Boolean
         get() = prefs.getBoolean("vision",true)
         set(value) { prefs.edit().putBoolean("vision",value).apply() }
+    var autoGui:Boolean
+        get()=prefs.getBoolean("auto_gui",false)
+        set(value) { prefs.edit().putBoolean("auto_gui",value).apply() }
     fun hasKey() = prefs.contains("encrypted_key")
     fun apiKey(): String {
         val stored=prefs.getString("encrypted_key", null) ?: return ""

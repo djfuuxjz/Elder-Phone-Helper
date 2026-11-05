@@ -105,7 +105,7 @@ class MainActivity : Activity() {
         if(!Settings(this).hasKey()) { toast("请先在“我的”中配置模型");showMine();return }
         val launch=if(task.fixed) "开始后，助手会打开微信，再由您按提示操作。" else "任务：${task.goal}\n开始后返回桌面，由您按提示操作。"
         AlertDialog.Builder(this).setTitle("开始操作引导")
-            .setMessage("助手将读取当前页面，必要时把截图发送给您配置的模型。每一步由您亲自点击。输入输出和截图会保存在本机 Debug 中，供排查问题，可随时清除。\n\n$launch")
+            .setMessage("助手将读取当前页面，每次决策保存截图；启用图片模型时把截图发送给您配置的模型。打开应用优先调用系统；点击和返回仅在开启自动操作时执行，其余由您操作。输入输出和截图会保存在本机 Debug 中，供排查问题，可随时清除。\n\n$launch")
             .setPositiveButton("开始") { _,_ ->
                 if(AppRuntime.active) { toast("任务正在进行");return@setPositiveButton }
                 if(!AppRuntime.connected) { showPermission();return@setPositiveButton }
@@ -159,6 +159,8 @@ class MainActivity : Activity() {
             field.setPadding(dp(12),dp(12),dp(12),dp(12))
             field.layoutParams=LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8);bottomMargin=dp(8) }
         }
+        val autoGui=CheckBox(this).apply { text="允许自动点击和返回（默认关闭；输入与滚动仍人工操作）";textSize=18f;isChecked=settings.autoGui }
+        body.addView(autoGui)
         body.addView(endpoint); body.addView(model); body.addView(key); body.addView(vision)
         body.addView(button("保存模型配置") {
             if(AppRuntime.active) { toast("请先停止引导再修改模型"); return@button }
@@ -166,7 +168,7 @@ class MainActivity : Activity() {
             if(url?.scheme!="https" || url.host.isNullOrBlank() || url.userInfo!=null || url.query!=null || url.fragment!=null || model.text.isBlank()) { toast("请输入有效 HTTPS 地址和模型名称"); return@button }
             runCatching {
                 if(key.text.isNotBlank()) settings.saveKey(key.text.toString())
-                settings.endpoint=endpoint.text.toString(); settings.model=model.text.toString(); settings.vision=vision.isChecked
+                settings.endpoint=endpoint.text.toString(); settings.model=model.text.toString(); settings.vision=vision.isChecked;settings.autoGui=autoGui.isChecked
             }.onSuccess { key.text.clear();AppRuntime.modelStatus="模型连接尚未验证"; toast("已保存；实际连接在任务运行时验证") }.onFailure { toast("保存失败：${it.message}") }
         })
         body.addView(button("删除已保存密钥") { if(!AppRuntime.active) { settings.clearKey(); toast("密钥已删除") } else toast("请先停止引导") })

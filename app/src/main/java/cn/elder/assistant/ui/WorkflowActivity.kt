@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.WindowInsets
 import android.widget.*
 import cn.elder.assistant.core.AppRuntime
+import cn.elder.assistant.workflow.WorkflowCatalog
 import cn.elder.assistant.workflow.WorkflowStore
 import org.json.JSONObject
 import java.io.File
@@ -30,7 +31,7 @@ class WorkflowActivity:Activity() {
     private fun idle() { check(!AppRuntime.active && !AppRuntime.reviewRunning) { "请先停止任务并等待复盘完成" } }
     private fun showList() {
         body.removeAllViews();label("流程库 · 开发维护")
-        label("内置流程默认启用。成功后模型总结较短流程并自动启用；当前人工版本锁定、流程停用或执行中切换版本时只保存。旧版本保留，可回退。")
+        label("固定微信视频流程默认启用，成功后可复盘、保留版本和回退。下方高频任务模板按自定义目标自动匹配，目前只读且不会自动晋升。")
         if(AppRuntime.reviewRunning) label("正在后台复盘，完成后点刷新。")
         AppRuntime.workflowTrialId?.let { label("下次任务试运行版本：$it") }
         button("刷新") { showList() };button("新建 / 粘贴 JSON 导入") { idle();edit(null) }
@@ -38,6 +39,15 @@ class WorkflowActivity:Activity() {
         button("取消下次试运行") { AppRuntime.workflowTrialId=null;showList() }
         button("返回") { finish() }
         store.list().forEach { v -> button("${if(v.getBoolean("active")) "已启用" else "候选/保留"} · ${v.getJSONObject("body").getString("name")}\n${v.getString("source")} · ${v.getString("id").take(8)}${if(v.getBoolean("locked")) " · 已锁定" else ""}") { detail(v.getString("id")) } }
+        label("内置高频任务流程 · 匹配后自动使用（只读）")
+        WorkflowCatalog.all().forEach { template ->
+            button(template.getString("name")) { templateDetail(template) }
+        }
+    }
+    private fun templateDetail(template:JSONObject) {
+        body.removeAllViews();label("内置流程模板 · 尚未真机验收")
+        label(template.toString(2))
+        button("返回列表") { showList() }
     }
     private fun detail(id:String) {
         val v=store.list().first { it.getString("id")==id };body.removeAllViews();label(v.toString(2))

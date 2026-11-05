@@ -11,7 +11,7 @@ object RunMetrics {
         }.toList()
     }
     fun percentile(values:List<Long>,p:Double):Long? {
-        require(p>0 && p<=1)
+        require(p>0 && p<=1) { "分位数必须在 (0,1]，实际为 $p" }
         if(values.isEmpty()) return null
         val sorted=values.sorted();return sorted[(ceil(p*sorted.size).toInt()-1).coerceAtLeast(0)]
     }

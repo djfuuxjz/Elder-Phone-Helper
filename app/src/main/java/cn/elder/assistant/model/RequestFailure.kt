@@ -19,6 +19,7 @@ object RequestFailure {
             else -> "模型请求失败：${error.message ?: error.javaClass.simpleName}"
         }
         return JSONObject().put("error",reason).put("error_code",if(cancellation!=null) "APP_CANCELLED" else if(error is ModelFailure) error.code else "TRANSPORT_ERROR")
+            .put("stage",if(cancellation!=null) "cancellation" else if(error is ModelFailure && error.code=="INVALID_ENVELOPE") "response_parse" else "request").put("rule","model_transport_and_envelope").put("expected","请求可达、HTTP 成功且响应结构有效").put("actual",error.message ?: error.javaClass.simpleName)
             .put("exception_type",error.javaClass.simpleName).put("exception_message",error.message ?: JSONObject.NULL)
             .put("cancel_reason",cancellation ?: JSONObject.NULL)
     }

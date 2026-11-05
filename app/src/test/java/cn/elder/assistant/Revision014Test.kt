@@ -44,7 +44,7 @@ class Revision014Test {
         val s=store();s.activate(null);review(s);assertNull(s.selected())
         val manual=s.add(WorkflowStore.builtin());s.activate(manual);review(s);assertEquals(manual,s.selected()!!.getString("id"))
     }
-    @Test fun parsedCompleteReachesTerminalWithoutLocalPageEvidence() {
+    @Test fun parsedCompleteWithoutCurrentEvidenceIsRejected() {
         val service=Robolectric.buildService(GuideService::class.java).create()
         val c=GuidanceController(service.get())
         try {
@@ -54,7 +54,7 @@ class Revision014Test {
             val raw=JSONObject().put("current_state","done").put("next_action","complete").put("instruction","任务已成功").put("confidence",0.2).put("task_completed",true).put("evidence",JSONArray()).toString()
             val method=GuidanceController::class.java.getDeclaredMethod("applyDecision",RequestToken::class.java,Snapshot::class.java,String::class.java,Boolean::class.javaPrimitiveType,JSONObject::class.java).apply { isAccessible=true }
             method.invoke(c,token,s,raw,false,JSONObject())
-            assertEquals(Phase.COMPLETED,flow.phase);assertFalse(flow.active);assertFalse(flow.accepts(token))
+            assertNotEquals(Phase.COMPLETED,flow.phase);assertTrue(flow.active);assertFalse(flow.accepts(token))
         } finally { c.close();service.destroy() }
     }
 }

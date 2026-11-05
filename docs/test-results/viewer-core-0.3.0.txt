@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: prepared and response join same request without doubling call count
+ok 1 - prepared and response join same request without doubling call count
+  ---
+  duration_ms: 0.687917
+  type: 'test'
+  ...
+# Subtest: same step separate attempts remain separate
+ok 2 - same step separate attempts remain separate
+  ---
+  duration_ms: 0.129041
+  type: 'test'
+  ...
+# Subtest: sessions do not cross associate identical request ids
+ok 3 - sessions do not cross associate identical request ids
+  ---
+  duration_ms: 0.18875
+  type: 'test'
+  ...
+# Subtest: malformed lines are reported with original line numbers
+ok 4 - malformed lines are reported with original line numbers
+  ---
+  duration_ms: 0.4235
+  type: 'test'
+  ...
+# Subtest: ambiguous fallback is not guessed
+ok 5 - ambiguous fallback is not guessed
+  ---
+  duration_ms: 0.081708
+  type: 'test'
+  ...
+# Subtest: attachments are local to source directory, reject traversal and ambiguity
+ok 6 - attachments are local to source directory, reject traversal and ambiguity
+  ---
+  duration_ms: 0.130333
+  type: 'test'
+  ...
+# Subtest: returned decision is distinct from displayed guidance; discarded takes priority
+ok 7 - returned decision is distinct from displayed guidance; discarded takes priority
+  ---
+  duration_ms: 0.116542
+  type: 'test'
+  ...
+# Subtest: real exported run gives independently checked totals and attachment refs
+ok 8 - real exported run gives independently checked totals and attachment refs
+  ---
+  duration_ms: 9.864792
+  type: 'test'
+  ...
+# Subtest: explicit app cancellation is displayed separately from transport failure
+ok 9 - explicit app cancellation is displayed separately from transport failure
+  ---
+  duration_ms: 0.240416
+  type: 'test'
+  ...
+# Subtest: review joins request response and candidate without pretending it is a user action
+ok 10 - review joins request response and candidate without pretending it is a user action
+  ---
+  duration_ms: 0.251416
+  type: 'test'
+  ...
+# Subtest: automatically activated review is shown as enabled
+ok 11 - automatically activated review is shown as enabled
+  ---
+  duration_ms: 0.085625
+  type: 'test'
+  ...
+# Subtest: 1200x2670 click projects exactly at native and half-size screenshots
+ok 12 - 1200x2670 click projects exactly at native and half-size screenshots
+  ---
+  duration_ms: 0.582958
+  type: 'test'
+  ...
+# Subtest: landscape rotation is explicit; mismatched or unknown orientation is rejected
+ok 13 - landscape rotation is explicit; mismatched or unknown orientation is rejected
+  ---
+  duration_ms: 0.105666
+  type: 'test'
+  ...
+# Subtest: empty containers and clickable filters do not remove actionable unlabeled icons
+ok 14 - empty containers and clickable filters do not remove actionable unlabeled icons
+  ---
+  duration_ms: 0.0905
+  type: 'test'
+  ...
+# Subtest: structured diagnostics survive association, status and raw data
+ok 15 - structured diagnostics survive association, status and raw data
+  ---
+  duration_ms: 0.727917
+  type: 'test'
+  ...
+# Subtest: cancellation, stale response and dispatch remain distinct
+ok 16 - cancellation, stale response and dispatch remain distinct
+  ---
+  duration_ms: 0.121584
+  type: 'test'
+  ...
+# Subtest: preparation failure cannot masquerade as cancellation
+ok 17 - preparation failure cannot masquerade as cancellation
+  ---
+  duration_ms: 0.100792
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 45.681375

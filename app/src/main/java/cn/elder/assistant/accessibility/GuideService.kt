@@ -14,7 +14,12 @@ class GuideService: AccessibilityService() {
     }
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val pkg=event?.packageName?.toString() ?: return
-        if(pkg!=packageName) controller?.pageEvent(pkg)
+        if(pkg!=packageName) controller?.accessibilityEvent(event)
+    }
+    override fun onKeyEvent(event:android.view.KeyEvent):Boolean {
+        // Only BACK is observed; never collect typing keys, and never consume the event.
+        if(event.keyCode==android.view.KeyEvent.KEYCODE_BACK && event.action==android.view.KeyEvent.ACTION_UP) controller?.backKey(event.eventTime)
+        return false
     }
     override fun onInterrupt() { controller?.stop(cn.elder.assistant.guidance.Phase.FAILED,"无障碍服务被系统中断");AppRuntime.status="服务已中断，请重新开始" }
     override fun onDestroy() { controller?.close();controller=null;AppRuntime.connected=false; AppRuntime.active=false; AppRuntime.start=null; AppRuntime.startCustom=null; AppRuntime.stop=null; AppRuntime.retry=null; super.onDestroy() }

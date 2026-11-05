@@ -1,0 +1,2 @@
+5321df65efefe11f9f7b98dfe98aafa828411a2d4b236b47418e0ac50f4352ed  phone-assistant-0.3.0-debug.apk
+a552ead4e85ee2ea583ce763f31024fe04a6f881ff9d4b63221067e8fbf189ad  phone-assistant-0.3.0-source.zip

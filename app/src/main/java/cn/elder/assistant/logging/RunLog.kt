@@ -9,21 +9,24 @@ class RunLog(private val root: File, private val secrets: List<String> = emptyLi
     val id: String = RunNames.newId()
     val directory = File(root, id)
     init { if (!directory.mkdirs()) throw IOException("无法创建日志目录") }
+    private var storedBytes = root.walkTopDown().filter { it.isFile }.sumOf { it.length() }
     @Synchronized fun event(type: String, data: JSONObject = JSONObject()) {
-        val obj = JSONObject().put("timestamp", System.currentTimeMillis()).put("session_id", id)
+        val obj = JSONObject().put("timestamp", data.optLong("occurred_at",System.currentTimeMillis())).put("session_id", id)
             .put("time_zone", java.time.ZoneId.systemDefault().id).put("task_key", task.key).put("goal", task.goal).put("event", type).put("data", data)
         val text = redact(obj.toString()) + "\n"
         checkCapacity(text.toByteArray().size.toLong())
         File(directory, "events.jsonl").appendText(text)
+        storedBytes += text.toByteArray().size
     }
     @Synchronized fun artifact(name: String, bytes: ByteArray): String {
-        require(name.matches(Regex("[A-Za-z0-9_.-]+")) && !name.startsWith("."))
+        require(name.matches(Regex("[A-Za-z0-9_.-]+")) && !name.startsWith(".")) { "附件名称必须是安全的相对文件名：$name" }
         checkCapacity(bytes.size.toLong())
         File(directory, name).writeBytes(bytes)
+        storedBytes += bytes.size
         return name
     }
     private fun checkCapacity(extra: Long) {
-        val size = root.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        val size = storedBytes
         if (size + extra > maxBytes) throw IOException("调试存储已满，请在 Debug 中导出并清理")
     }
     private fun redact(text: String): String = secrets.filter { it.isNotBlank() }.fold(text) { s, key ->

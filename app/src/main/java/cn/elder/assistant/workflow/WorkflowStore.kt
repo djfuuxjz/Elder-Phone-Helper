@@ -24,9 +24,9 @@ class WorkflowStore(private val file:File) {
             )))
         fun validate(body:JSONObject):JSONObject {
             require(body.getString("task_key")==TaskSpec.KEY) { "当前仅支持给女儿打视频电话" }
-            require(body.getString("name").length in 1..80)
-            val steps=body.getJSONArray("steps"); require(steps.length() in 1..20)
-            repeat(steps.length()) { require(steps.getString(it).length in 1..500) }
+            require(body.getString("name").length in 1..80) { "流程名称长度必须在 1 至 80 之间" }
+            val steps=body.getJSONArray("steps"); require(steps.length() in 1..20) { "流程步骤数必须在 1 至 20 之间，实际 ${steps.length()}" }
+            repeat(steps.length()) { require(steps.getString(it).length in 1..500) { "第 $it 条流程步骤长度必须在 1 至 500 之间" } }
             return JSONObject().put("name",body.getString("name")).put("task_key",TaskSpec.KEY).put("steps",JSONArray(steps.toString()))
         }
     }
@@ -42,7 +42,7 @@ class WorkflowStore(private val file:File) {
     fun list():List<JSONObject> = synchronized(lock) { val all=read();val a=all.getJSONArray("versions");(0 until a.length()).map { JSONObject(a.getJSONObject(it).toString()).put("active",all.optString("active")==a.getJSONObject(it).getString("id")) }.reversed() }
     fun selected(trial:String?=null):JSONObject? = synchronized(lock) { val versions=list();if(trial!=null) versions.find { it.getString("id")==trial } ?: error("试运行版本已不存在") else versions.find { it.getBoolean("active") } }
     fun add(body:JSONObject,source:String="manual",base:String?=null,run:String?=null,rationale:String="",autoActivate:Boolean=false):String = synchronized(lock) {
-        require(source in setOf("manual","model")); val clean=validate(body);val data=read()
+        require(source in setOf("manual","model")) { "流程来源无效：$source" }; val clean=validate(body);val data=read()
         val id=UUID.randomUUID().toString();data.getJSONArray("versions").put(JSONObject().put("id",id).put("body",clean).put("source",source)
             .put("base_version",base ?: JSONObject.NULL).put("source_run",run ?: JSONObject.NULL).put("rationale",rationale.take(3000)).put("created_at",System.currentTimeMillis()).put("locked",false))
         if(autoActivate) {
@@ -55,7 +55,7 @@ class WorkflowStore(private val file:File) {
         }
         write(data);id
     }
-    fun activate(id:String?) = synchronized(lock) { val data=read();if(id!=null) require(list().any { it.getString("id")==id });data.put("active",id ?: JSONObject.NULL);write(data) }
+    fun activate(id:String?) = synchronized(lock) { val data=read();if(id!=null) require(list().any { it.getString("id")==id }) { "待启用流程不存在：$id" };data.put("active",id ?: JSONObject.NULL);write(data) }
     fun setLocked(id:String,value:Boolean) = synchronized(lock) { val data=read();val versions=data.getJSONArray("versions");val found=(0 until versions.length()).map { versions.getJSONObject(it) }.find { it.getString("id")==id } ?: error("版本不存在");found.put("locked",value).put("auto_update_locked",value);write(data) }
     fun revise(id:String,body:JSONObject):String = synchronized(lock) { require(list().any { it.getString("id")==id && !it.getBoolean("locked") }) { "该版本已锁定，请先解锁或新建流程" };add(body,"manual",id) }
 }
